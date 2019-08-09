@@ -1,5 +1,12 @@
 {
     "files.associations": {
-        "memoria.h": "c"
+        "memoria.h": "c",
+        "types.h": "c",
+        "string.h": "c",
+        "signal.h": "c",
+        "socket.h": "c",
+        "in.h": "c",
+        "inet.h": "c",
+        "resource.h": "c"
     }
 }

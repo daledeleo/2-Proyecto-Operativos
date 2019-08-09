@@ -1,48 +1,64 @@
 #include "memoria.h"
+#define MAXSLEEP 64
 
-#define SHMSZ 27
+int connect_retry(int domain, int type, int protocol, const struct sockaddr *addr, socklen_t alen)
+{
 
-int main()
-{printf("This is the client program\n");
+	int numsec, fd; /* * Try to connect with exponential backoff. */
 
-	int sockfd;
-	int len, rc ;
-	struct sockaddr_in address;
-	int result;
-	char ch = 'A';
-
-   //Create socket for client.
-	sockfd = socket(PF_INET, SOCK_STREAM, 0);
-	if (sockfd == -1) { 
-		perror("Socket create failed.\n") ; 
-		return -1 ; 
-	} 
-	
-	//Name the socket as agreed with server.
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr("127.0.0.1");
-	address.sin_port = htons(7734);
-	len = sizeof(address);
-
-	result = connect(sockfd, (struct sockaddr *)&address, len);
-	if(result == -1)
+	for (numsec = 1; numsec <= MAXSLEEP; numsec <<= 1)
 	{
-		perror("Error has occurred");
-		exit(-1);
+
+		if ((fd = socket(domain, type, protocol)) < 0)
+			return (-1);
+
+		if (connect(fd, addr, alen) == 0)
+		{ /* * Conexión aceptada. */
+			return (fd);
+		}
+		close(fd); //Si falla conexion cerramos y creamos nuevo socket
+
+		/* * Delay before trying again. */
+		if (numsec <= MAXSLEEP / 2)
+
+			sleep(numsec);
 	}
-
-	while ( ch < 'Y') {
-
-		//Read and write via sockfd
-		rc = write(sockfd, &ch, 1);
-		if (rc == -1) break ; 
-		read(sockfd, &ch, 1);
-		printf("Char from server = %c\n", ch);		
-	} 
-	close(sockfd);
-
-	exit(0);
+	return (-1);
 }
 
- 
+int main()
+{
 
+	int sockfd;
+
+	//Direccion del servidor
+	struct sockaddr_in direccion_cliente;
+
+	memset(&direccion_cliente, 0, sizeof(direccion_cliente)); //ponemos en 0 la estructura direccion_servidor
+
+	//llenamos los campos
+	direccion_cliente.sin_family = AF_INET;						//IPv4
+	direccion_cliente.sin_port = htons(PUERTO);					//Convertimos el numero de puerto al endianness de la red
+	direccion_cliente.sin_addr.s_addr = inet_addr("127.0.0.1"); //Nos tratamos de conectar a esta direccion
+
+	//AF_INET + SOCK_STREAM = TCP
+
+	if ((sockfd = connect_retry(direccion_cliente.sin_family, SOCK_STREAM, 0, (struct sockaddr *)&direccion_cliente, sizeof(direccion_cliente))) < 0)
+	{
+		printf("falló conexión\n");
+		exit(-1);
+	}
+	//En este punto ya tenemos una conexión válida
+	//print_uptime(sockfd);
+	char buf[100] = {0};
+	while (1)
+	{
+		printf("ingrese un numero: ");
+		fgets(buf, 100, stdin);
+		reemplazar(buf); //quitamos el salto de linea
+		send(sockfd,buf,strlen(buf),0);
+
+	}
+	close(sockfd);
+	return 0;
+}

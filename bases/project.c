@@ -1,48 +1,64 @@
 #include "memoria.h"
+#define BUFLEN 128
 
-#define SHMSZ     27
+//Funcion para inicializar el servidor
+int initserver(int type, const struct sockaddr *addr, socklen_t alen, int qlen)
+{
+	int fd;
+	int err = 0;
+
+	if ((fd = socket(addr->sa_family, type, 0)) < 0)
+		return -1;
+
+	if (bind(fd, addr, alen) < 0)
+		goto errout;
+
+	if (type == SOCK_STREAM || type == SOCK_SEQPACKET)
+	{
+		if (listen(fd, qlen) < 0)
+			goto errout;
+	}
+	return fd;
+errout:
+	err = errno;
+	close(fd); //cerrando la conexion en caso de error
+	errno = err;
+	return (-1);
+}
+//Main
 
 int main()
 {
-	//Declaring process variables.
-	int server_sockfd, client_sockfd;
-	int server_len ; 
-	int rc ; 
-	unsigned client_len;
-	struct sockaddr_in server_address;
-	struct sockaddr_in client_address;
+	int sockfd;
 
-	//Remove any old socket and create an unnamed socket for the server.
-	server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	server_address.sin_family = AF_INET;
-	server_address.sin_addr.s_addr = htons(INADDR_ANY);
-	server_address.sin_port = htons(7734) ; 
-	server_len = sizeof(server_address);
+	//Direccion del servidor
+	struct sockaddr_in direccion_servidor;
 
-	rc = bind(server_sockfd, (struct sockaddr *) &server_address, server_len);
-	printf("RC from bind = %d\n", rc ) ; 
-	
-	//Create a connection queue and wait for clients
-	rc = listen(server_sockfd, 5);
-	printf("RC from listen = %d\n", rc ) ; 
+	memset(&direccion_servidor, 0, sizeof(direccion_servidor)); //ponemos en 0 la estructura direccion_servidor
 
-	client_len = sizeof(client_address);
-	client_sockfd = accept(server_sockfd, (struct sockaddr *) &client_address, &client_len);
-	printf("after accept()... client_sockfd = %d\n", client_sockfd) ; 
+	//llenamos los campos
+	direccion_servidor.sin_family = AF_INET;					 //IPv4
+	direccion_servidor.sin_port = htons(PUERTO);				 //Convertimos el numero de puerto al endianness de la red
+	direccion_servidor.sin_addr.s_addr = inet_addr("127.0.0.1"); //Nos vinculamos a la interface localhost o podemos usar INADDR_ANY para ligarnos A TODAS las interfaces
 
-	while(1)
-	{
-		char ch;
-		printf("server waiting\n");
-		rc = read(client_sockfd, &ch, 1);
-		printf("Char from client= %c\n", ch ) ; 		
-		if (ch=='X') break ; 
-		ch++;
-		write(client_sockfd, &ch, 1);
+	//inicalizamos servidor (AF_INET + SOCK_STREAM = TCP)
+	if ((sockfd = initserver(SOCK_STREAM, (struct sockaddr *)&direccion_servidor,
+							 sizeof(direccion_servidor), 1000)) < 0)
+	{ //Hasta 1000 solicitudes en cola
+		printf("Error al inicializar el servidor\n");
 	}
-
-	printf("server exiting\n");
-
-	close(client_sockfd);
-
+	int clfd = accept(sockfd, NULL, NULL);
+	while (1)
+	{
+		int n = 0;
+		char buf[BUFLEN] = {0};
+		while ((n = recv(sockfd, buf, BUFLEN, MSG_WAITALL)) > 0)
+		{
+			write(STDOUT_FILENO, buf, n); //Imprimimos lo que recibimos
+		}
+		if (n < 0)
+			printf(" recv error");
+	}
+	close(clfd);
+	exit(1);
 }
