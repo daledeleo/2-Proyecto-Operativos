@@ -1,11 +1,15 @@
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <time.h>
 #include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 //Estructuras
 typedef struct memoria
@@ -30,8 +34,9 @@ int validar_num(char numero[50])
     j = strlen(numero);
     while (i < j && sw == 0)
     {
-        if (isdigit(numero[i]) != 0 || strcmp('-',numero[0]))
+        if (isdigit(numero[i]) != 0)
         {
+            printf("salio");
             i++;
         }
         else

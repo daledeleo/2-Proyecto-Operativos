@@ -3,49 +3,45 @@
 #define SHMSZ 27
 
 int main()
-{
-    struct memoria *memory;
-    int shmid;
-    key_t key;
-    char *shm, *s;
+{printf("This is the client program\n");
 
-    
-    key = 5678;
+	int sockfd;
+	int len, rc ;
+	struct sockaddr_in address;
+	int result;
+	char ch = 'A';
 
-   
-    if ((shmid = shmget(key, SHMSZ, 0666)) < 0)
-    {
-        perror("shmget");
-        return (1);
-    }
+   //Create socket for client.
+	sockfd = socket(PF_INET, SOCK_STREAM, 0);
+	if (sockfd == -1) { 
+		perror("Socket create failed.\n") ; 
+		return -1 ; 
+	} 
+	
+	//Name the socket as agreed with server.
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = inet_addr("127.0.0.1");
+	address.sin_port = htons(7734);
+	len = sizeof(address);
 
-    if ((memory = shmat(shmid, NULL, 0)) == (char *)-1)
-    {
-        perror("shmat");
-        return (1);
-    }
-
-
-   printf("pid del padre %d\n", getpid());
-        
-	char buf[100] = {0};
-	while(1){
-		
-		printf("ingrese un numero: ");
-		fgets(buf, 100, stdin);
-		reemplazar(buf);
-		while(validar_num(buf)<0){
-            printf("Ingrese un numero valido: ");
-		    fgets(buf, 100, stdin);
-		    reemplazar(buf);
-        }
-		printf("%s\n", buf);
-        *shm=buf;
-		fflush(stdout);
-		
-		
+	result = connect(sockfd, (struct sockaddr *)&address, len);
+	if(result == -1)
+	{
+		perror("Error has occurred");
+		exit(-1);
 	}
-    return (0);
+
+	while ( ch < 'Y') {
+
+		//Read and write via sockfd
+		rc = write(sockfd, &ch, 1);
+		if (rc == -1) break ; 
+		read(sockfd, &ch, 1);
+		printf("Char from server = %c\n", ch);		
+	} 
+	close(sockfd);
+
+	exit(0);
 }
 
  

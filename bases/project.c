@@ -4,47 +4,45 @@
 
 int main()
 {
-	char c;
-    int shmid;
-    key_t key;
-    char *shm, *s;
+	//Declaring process variables.
+	int server_sockfd, client_sockfd;
+	int server_len ; 
+	int rc ; 
+	unsigned client_len;
+	struct sockaddr_in server_address;
+	struct sockaddr_in client_address;
 
-    /*
-     * We'll name our shared memory segment "5678".
-     */
-    key = 5678;
+	//Remove any old socket and create an unnamed socket for the server.
+	server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	server_address.sin_family = AF_INET;
+	server_address.sin_addr.s_addr = htons(INADDR_ANY);
+	server_address.sin_port = htons(7734) ; 
+	server_len = sizeof(server_address);
 
-    /*
-     * Create the segment.
-     */
-    if ((shmid = shmget(key, SHMSZ, IPC_CREAT | 0666)) < 0) {
-        perror("shmget");
-        return(1);
-    }
+	rc = bind(server_sockfd, (struct sockaddr *) &server_address, server_len);
+	printf("RC from bind = %d\n", rc ) ; 
+	
+	//Create a connection queue and wait for clients
+	rc = listen(server_sockfd, 5);
+	printf("RC from listen = %d\n", rc ) ; 
 
-    /*
-     * Now we attach the segment to our data space.
-     */
-    if ((shm = shmat(shmid, NULL, 0)) == (char *) -1) {
-        perror("shmat");
-        return(1);
-    }
-    *shm='';
-    /*
-     * Finally, we wait until the other process 
-     * changes the first character of our memory
-     * to '*', indicating that it has read what 
-     * we put there.
-     */
-    while (*shm != '')
-        sleep(1);
-   
-    printf("el client leyo la memoria\n");
-   printf(*shm)
-    putchar('\n');
+	client_len = sizeof(client_address);
+	client_sockfd = accept(server_sockfd, (struct sockaddr *) &client_address, &client_len);
+	printf("after accept()... client_sockfd = %d\n", client_sockfd) ; 
 
-    shmctl(shmid,IPC_RMID, 0);
+	while(1)
+	{
+		char ch;
+		printf("server waiting\n");
+		rc = read(client_sockfd, &ch, 1);
+		printf("Char from client= %c\n", ch ) ; 		
+		if (ch=='X') break ; 
+		ch++;
+		write(client_sockfd, &ch, 1);
+	}
 
-    return(0);
+	printf("server exiting\n");
+
+	close(client_sockfd);
 
 }
