@@ -57,7 +57,6 @@ int main()
 		fgets(buf, 100, stdin);
 		reemplazar(buf); //quitamos el salto de linea
 		send(sockfd,buf,strlen(buf),0);
-
 	}
 	close(sockfd);
 	return 0;
