@@ -30,7 +30,7 @@ int validar_num(char numero[50])
     j = strlen(numero);
     while (i < j && sw == 0)
     {
-        if (isdigit(numero[i]) != 0 )
+        if (isdigit(numero[i]) != 0 || strcmp('-',numero[0]))
         {
             i++;
         }

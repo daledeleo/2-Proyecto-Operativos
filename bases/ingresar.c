@@ -1,12 +1,9 @@
-#include "include/memoria.h"
+#include "memoria.h"
 
 #define SHMSZ 27
 
 int main()
 {
-    /*
-   
-
     struct memoria *memory;
     int shmid;
     key_t key;
@@ -28,20 +25,10 @@ int main()
         return (1);
     }
 
-    
-    for (s = shm; *s != NULL; s++)
-        putchar(*s);
 
-    putchar('\n');
-
-    
-    printf("Altero la memoria\n");
-    *shm = '*';
-     */
    printf("pid del padre %d\n", getpid());
         
 	char buf[100] = {0};
-	char *args[10] = {0};
 	while(1){
 		
 		printf("ingrese un numero: ");
@@ -52,17 +39,8 @@ int main()
 		    fgets(buf, 100, stdin);
 		    reemplazar(buf);
         }
-		int i = 0;
-		char *valor;
-		args[i] = strdup(strtok(buf, " "));
-		i++;		
-		while( (valor = strtok(NULL, " ")) != NULL ){
-			args[i] = strdup(valor);
-			i++;
-		}
-       
-
 		printf("%s\n", buf);
+        *shm=buf;
 		fflush(stdout);
 		
 		

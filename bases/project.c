@@ -1,4 +1,4 @@
-#include "include/memoria.h"
+#include "memoria.h"
 
 #define SHMSZ     27
 
@@ -29,29 +29,18 @@ int main()
         perror("shmat");
         return(1);
     }
-
-    /*
-     * Now put some things into the memory for the
-     * other process to read.
-     */
-    s = shm;
-
-    for (c = 'a'; c <= 'z'; c++)
-        *s++ = c;
-    *s = NULL;
-
+    *shm='';
     /*
      * Finally, we wait until the other process 
      * changes the first character of our memory
      * to '*', indicating that it has read what 
      * we put there.
      */
-    while (*shm != '*')
+    while (*shm != '')
         sleep(1);
    
     printf("el client leyo la memoria\n");
-    for (s = shm; *s != NULL; s++)
-	        putchar(*s);
+   printf(*shm)
     putchar('\n');
 
     shmctl(shmid,IPC_RMID, 0);
