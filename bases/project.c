@@ -1,11 +1,9 @@
 #include "memoria.h"
 #define BUFLEN 128
 
-//[0]fision en la generacion actual
-//[1]fision en una generacion previa
+//[0]valor previo de K
+//[1]valor final de k
 int delta_k[] = {1,1};
-
-
 int sockfd;
 
 //Direccion del servidor
@@ -38,15 +36,14 @@ void *actualizar_k()
 		{
 			printf("Se recibio: %i\n", atoi(buf));
 			//printf("La cantidad de caracteres recibidos fueron: %i\n",n);
+			desplazar(delta_k,delta_k[1]+atoi(buf));
 			memset(buf, 0, BUFLEN);
-			desplazar(delta_k,atoi(buf));
 		}
 		if (n < 0)
 		{
 			printf(" recv error");
 			close(clfd);
-		}
-		desplazar(delta_k,atoi(buf));
+		} 
 	}
 }
 
@@ -58,10 +55,8 @@ int initserver(int type, const struct sockaddr *addr, socklen_t alen, int qlen)
 
 	if ((fd = socket(addr->sa_family, type, 0)) < 0)
 		return -1;
-
 	if (bind(fd, addr, alen) < 0)
 		goto errout;
-
 	if (type == SOCK_STREAM || type == SOCK_SEQPACKET)
 	{
 		if (listen(fd, qlen) < 0)
@@ -85,17 +80,30 @@ int main()
 	struct barra list_barras[15];
 	
 	pthread_attr_init(&attr);
-	pthread_create(&tid,&attr,actualizar_k,NULL); //este hilo se encarga
+	pthread_create(&tid,&attr,actualizar_k,NULL); //este hilo se encarga de actualizar el valor de k
 
 	//Inicializar barras
 	iniciar_barras(list_barras);//hay 16 barras se moveran de acuerdo a su indice
 
 	while(1){
+		// se compara el valor final de k
+		if(delta_k[1]==1){
+			printf("Estado crittico del reactor, cada evento de fisión genera exactamente un nuevo evento de fisión\n");
+
+		}else if(delta_k[1]<1){
+			printf("Estado sub-critico del reactor, es decir la reacción en cadena no se puede sostener\n");
+			
+		}else
+		{
+			/* Para valores finales de k mayores a 1*/
+			printf("Estado super-critico del reactor, es decir la reacción en cadena crece exponencialmente\n");
+			/* code */
+		}
+		
 		sleep(3);
 		printf("Me desperte....\n");
-		printf("El valor actual de k es : %i\n",(delta_k[0]));
-		printf("El valor previo de k es : %i\n",(delta_k[1]));
-		printf("La division k_actual entre k_previo: %.5d\n",(delta_k[0]/delta_k[1]));
+		printf("El valor actual de k es : %i\n",delta_k[1]);
+		printf("El valor previo de k fue : %i\n",delta_k[0]);
 	}
 	
 }
