@@ -54,7 +54,7 @@ int main()
 		char buf[BUFLEN]={0};
 		while ((n = read(clfd, buf, BUFLEN)) > 0)
 		{
-			//printf("Se recibio: %s\n",buf);
+			printf("Se recibio: %i\n",atoi(buf));
 			//printf("La cantidad de caracteres recibidos fueron: %i\n",n);x
 			memset(buf,0,BUFLEN);
 		}
