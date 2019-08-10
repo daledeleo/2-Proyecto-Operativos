@@ -24,7 +24,6 @@ int connect_retry(int domain, int type, int protocol, const struct sockaddr *add
 int main()
 {
 	int sockfd;
-
 	//Direccion del servidor
 	struct sockaddr_in direccion_cliente;
 

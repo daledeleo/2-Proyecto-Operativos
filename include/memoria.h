@@ -15,13 +15,20 @@
 #include <arpa/inet.h>
 #include <sys/resource.h>
 #include <ctype.h>
+#include <pthread.h>
 
 #define PUERTO 5600 //puerto para el servidor y el cliente
+
 //Estructuras
-typedef struct memoria
+typedef struct barra
 {
-    char *valor; //El valor de K que van a compartir los procesos
-} objeto;
+   int profundidad; //profundidad que se sumerge la barrra
+   int condicion; //1 se mueve arriba y 0 se mueve hacia abajo
+   int longitud; //longitud de la barra
+
+}objeto_barra;
+
+#define INIT_EMPLOYEE(X) objeto_barra X = {.profundidad = 0, .condicion =1, .longitud = 30}
 
 void reemplazar(char *linea)
 {
@@ -37,7 +44,6 @@ void reemplazar(char *linea)
 int validar_num(char *numero)
 {
     int valor = 0;
-
     for (char *ptr = numero; *ptr; ++ptr)
     {
         if (isalpha(*ptr))
@@ -52,7 +58,6 @@ int validar_num(char *numero)
             valor += *ptr - '0';
         }
     }
-
     if (valor >= 0){
         return 1;
     }
