@@ -19,16 +19,19 @@
 
 #define PUERTO 5600 //puerto para el servidor y el cliente
 
+/*funciones para los hilos*/
+void *actualizar_k();
+void *resultados(void *param);
+
 //Estructuras
 typedef struct barra
 {
    int profundidad; //profundidad que se sumerge la barrra
    int condicion; //1 se mueve arriba y 0 se mueve hacia abajo
-   int longitud; //longitud de la barra
+   int longitud_max; //longitud de la barra
 
 }objeto_barra;
 
-#define INIT_EMPLOYEE(X) objeto_barra X = {.profundidad = 0, .condicion =1, .longitud = 30}
 
 void reemplazar(char *linea)
 {
@@ -49,7 +52,6 @@ int validar_num(char *numero)
         if (isalpha(*ptr))
         {
             puts("El dato no es numerico");
-            valor = -1;
             return -1;
         }
         else
@@ -62,4 +64,25 @@ int validar_num(char *numero)
         return 1;
     }
     return 1;
+}
+void desplazar(int *k,int valor){
+    int temp=k[1];
+    k[1]=valor;
+    k[0]=temp;
+    puts("Chupamelo ricorico sabrosito todos los dias carajoooo!!1");
+    printf("k[0] = %i\n",k[0]);
+    printf("k[1] = %i\n",k[1]);
+}
+void iniciar_barras(struct barra *list){
+    for(int i=0;i<16;i++){
+        struct barra gt;
+        gt.profundidad=0;
+        gt.condicion=1;
+        gt.longitud_max=30;
+        list[i]=gt;
+    }
+}
+void imprimir_barras(struct barra *list){
+
+
 }
