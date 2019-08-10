@@ -51,14 +51,17 @@ int main()
 	while (1)
 	{
 		int n = 0;
-		char buf[BUFLEN] = {0};
-		while ((n = recv(sockfd, buf, BUFLEN, MSG_WAITALL)) > 0)
+		char buf[BUFLEN]={0};
+		while ((n = read(clfd, buf, BUFLEN)) > 0)
 		{
-			write(STDOUT_FILENO, buf, n); //Imprimimos lo que recibimos
+			//printf("Se recibio: %s\n",buf);
+			//printf("La cantidad de caracteres recibidos fueron: %i\n",n);x
+			memset(buf,0,BUFLEN);
 		}
-		if (n < 0)
+		if (n < 0){
 			printf(" recv error");
+			close(clfd);
+		}
 	}
-	close(clfd);
 	exit(1);
 }
