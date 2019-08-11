@@ -3,7 +3,7 @@
 
 //[0]valor previo de K
 //[1]valor final de k
-int delta_k[] = {1,1};
+float delta_k[] = {1.0,1.0};
 int sockfd;
 
 //Direccion del servidor
@@ -34,9 +34,9 @@ void *actualizar_k()
 		char buf[BUFLEN] = {0};
 		while ((n = read(clfd, buf, BUFLEN)) > 0)
 		{
-			printf("Se recibio: %i\n", atoi(buf));
+			printf("Se recibio: %.5f\n", atof(buf));
 			//printf("La cantidad de caracteres recibidos fueron: %i\n",n);
-			desplazar(delta_k,delta_k[1]+atoi(buf));
+			desplazar(delta_k,delta_k[1]+atof(buf));
 			memset(buf, 0, BUFLEN);
 		}
 		if (n < 0)
@@ -104,8 +104,8 @@ int main()
 		
 		sleep(3);
 		printf("Me desperte....\n");
-		printf("El valor actual de k es : %i\n",delta_k[1]);
-		printf("El valor previo de k fue : %i\n",delta_k[0]);
+		printf("El valor actual de k es : %.5f\n",delta_k[1]);
+		printf("El valor previo de k fue : %.5f\n",delta_k[0]);
 	}
 	
 }
