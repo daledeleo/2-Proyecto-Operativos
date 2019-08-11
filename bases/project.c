@@ -89,15 +89,17 @@ int main()
 		// se compara el valor final de k
 		if(delta_k[1]==1){
 			printf("Estado crittico del reactor, cada evento de fisión genera exactamente un nuevo evento de fisión\n");
+			imprimir_barras(list_barras,delta_k[1]);
 
 		}else if(delta_k[1]<1){
 			printf("Estado sub-critico del reactor, es decir la reacción en cadena no se puede sostener\n");
-			
+			imprimir_barras(list_barras,delta_k[1]);
 		}else
 		{
 			/* Para valores finales de k mayores a 1*/
 			printf("Estado super-critico del reactor, es decir la reacción en cadena crece exponencialmente\n");
 			/* code */
+			imprimir_barras(list_barras,delta_k[1]);
 		}
 		
 		sleep(3);

@@ -26,14 +26,13 @@ void *resultados(void *param);
 //Estructuras
 typedef struct barra
 {
-   int profundidad; //profundidad que se sumerge la barrra
-   int condicion; //1 se mueve arriba y -1 se mueve hacia abajo
-   int longitud_max; //longitud de la barra
-   int se_movio; // si se movio vale 1 si no se movio vale 0
-   float delta_k;
+    int posicion;     //profundidad que se sumerge la barrra
+    int condicion;    //1 se mueve arriba y -1 se mueve hacia abajo
+    int longitud_max; //longitud de la barra
+    int se_movio;     // si se movio vale 1 si no se movio vale 0
+    float delta_k;
 
-}objeto_barra;
-
+} objeto_barra;
 
 void reemplazar(char *linea)
 {
@@ -62,56 +61,96 @@ int validar_num(char *numero)
             valor += *ptr - '0';
         }
     }
-    if (valor >= 0){
+    if (valor >= 0)
+    {
         return 1;
     }
     return 1;
 }
-void desplazar(int *k,int valor){
-    int temp=k[1];
-    k[1]=valor;
-    k[0]=temp;
+void desplazar(int *k, int valor)
+{
+    int temp = k[1];
+    k[1] = valor;
+    k[0] = temp;
 }
-void iniciar_barras(struct barra *list){
-    for(int i=0;i<16;i++){
+void iniciar_barras(struct barra *list)
+{
+    for (int i = 0; i < 16; i++)
+    {
         struct barra gt;
-        gt.profundidad=0;
-        gt.condicion=1;
-        gt.longitud_max=30;
-        gt.se_movio=0;
-        gt.delta_k=0;
-        list[i]=gt;
+        gt.posicion = 0;
+        gt.condicion = 1;
+        gt.longitud_max = 30;
+        gt.se_movio = 0;
+        gt.delta_k = 0;
+        list[i] = gt;
     }
 }
 
-void mover_barra(struct barra bar,int mover){
-        if(mover==10){
-            bar.delta_k=0.1;
-        }else if(mover == 15){
-            bar.delta_k=0.3;
-        }else if(mover ==20){
-            bar.delta_k=0.4;
-        }else if(mover == 25){
-            bar.delta_k=0.5;
-        }else if(mover==30){
-            bar.delta_k=0.55;
-        }
-        int temp=bar.posicion+mover;
-        if(temp > 30 || temp < 0){
-            printf("No se puede hacer dicho movimiento\n");
-            return ;
-        }
-        bar.posicion=temp;
+void mover_barra(struct barra bar, int mover)
+{
+    int signo = (int)(mover / mover);
+    if (mover == 10 || mover == -10)
+    {
+        bar.delta_k = signo * 0.1;
     }
+    else if (mover == 15 || mover == -15)
+    {
+        bar.delta_k = signo * 0.3;
+    }
+    else if (mover == 20 || mover == -20)
+    {
+        bar.delta_k = signo * 0.4;
+    }
+    else if (mover == 25 || mover == -25)
+    {
+        bar.delta_k = signo * 0.5;
+    }
+    else if (mover == 30 || mover == -30)
+    {
+        bar.delta_k = signo * 0.55;
+    }
+    int temp = bar.posicion + mover;
+    if (temp > 30 || temp < 0)
+    {
+        printf("No se puede hacer dicho movimiento\n");
+        return;
+    }
+    bar.posicion = temp;
+}
+//
+void imprimir_barras(struct barra *list, int valor_k)
+{
+    printf("*****************************************************************************************\n");
+    printf("El valor de k es: %i\n",valor_k);
+    printf("\t\tbarra1\tbarra2\tbarra3\tbarra4\tbarra5\tbarra6\tbarra7\tbarra8\n");
+    printf("posicion:\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n", list[0].posicion, list[1].posicion,
+           list[2].posicion, list[3].posicion, list[4].posicion, list[5].posicion, list[6].posicion, list[7].posicion);
+    printf("delta k:\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", list[0].delta_k, list[1].delta_k,
+           list[2].delta_k, list[3].delta_k, list[4].delta_k, list[5].delta_k, list[6].delta_k, list[7].delta_k);
+    printf("\t\tbarra9\tbarra10\tbarra11\tbarra12\tbarra13\tbarra14\tbarra15\tbarra16\n");
+    printf("posicion:\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n", list[8].posicion, list[9].posicion,
+           list[10].posicion, list[11].posicion, list[12].posicion, list[13].posicion, list[14].posicion, list[15].posicion);
+    printf("delta k:\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", list[8].delta_k, list[9].delta_k,
+           list[10].delta_k, list[11].delta_k, list[12].delta_k, list[13].delta_k, list[14].delta_k, list[15].delta_k);
+    printf("**********************************************FIN********************************************\n");
 
 }
-void imprimir_barras(struct barra *list,int valor_k){
-    printf("\tb\tbbarra1\tbbarra2\tbbarra3\tbbarra4\tbbarra5\tbbarra6\tbbarra7\tbbarra8\n");
-    printf("posicion:%i\tb\tb%i\tb%i\tb%i\tb%i\tb%i\tb%i\tb%i\n",list[0].profundidad,list[1].profundidad,
-    list[2].profundidad,list[3].profundidad,list[4].profundidad,list[5].profundidad,list[6].profundidad,list[7].profundidad);
-    printf("delta k:%i\tb\tb%i\tb%i\tb%i\tb%i\tb%i\tb%i\tb%i\n",list[0].delta_K,list[1].delta_K,
-    list[2].delta_K,list[3].delta_K,list[4].delta_K,list[5].delta_K,list[6].delta_K,list[7].delta_K);
-
-
-
+//solo se pasa en indice y retorna el indice de la barra par
+int encontrar_par(int indice){
+    if(indice<0 || indice>15){
+        printf("Error: sale del indice del arreglo\n");
+        return -1;
+    }
+    return ((indice + 8) % 15)+1;
 }
+
+//solo se pasa en indice y retorna el indice de la barra perpendicular
+int encontrar_perpendicular(int indice){
+    if(indice<0 || indice>15){
+        printf("Error: sale del indice del arreglo\n");
+        return -1;
+    }
+    return ((indice + 4) % 15)+1;
+}
+
