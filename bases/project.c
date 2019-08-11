@@ -82,6 +82,7 @@ errout:
 
 int main()
 {
+	
 
 	pthread_t tid; /* the thread identifier */
 	pthread_t tid2;
@@ -96,7 +97,7 @@ int main()
 	
 	pthread_attr_init(&attr2);
 	pthread_create(&tid2, &attr2, resultados_piston, NULL); //este hilo se encarga de actualizar el valor de k
-
+	
 	while (1)
 	{
 		// se compara el valor final de k

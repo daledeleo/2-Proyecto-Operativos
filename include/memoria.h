@@ -126,7 +126,7 @@ int mover_barra(struct barra bar, struct barra bar2, int mover)
 void imprimir_barras(struct barra *list, float valor_k)
 {
     printf("*****************************************************************************************\n");
-    printf("El valor de k es: %.5f\n", valor_k);
+    printf("El valor de k es: %.4f\n", valor_k);
     printf("\t\tbarra1\tbarra2\tbarra3\tbarra4\tbarra5\tbarra6\tbarra7\tbarra8\n");
     printf("posicion:\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n", list[0].posicion, list[1].posicion,
            list[2].posicion, list[3].posicion, list[4].posicion, list[5].posicion, list[6].posicion, list[7].posicion);
@@ -147,7 +147,11 @@ int encontrar_par(int indice)
         printf("Error: sale del indice del arreglo\n");
         return -1;
     }
-    return ((indice + 8) % 15 + 1);
+    if(indice >-1 && indice < 9){
+        return indice + 8;
+    }else{
+        return indice - 8;
+    }
 }
 
 //solo se pasa en indice y retorna el indice de la barra perpendicular
@@ -158,7 +162,11 @@ int encontrar_perpendicular(int indice)
         printf("Error: sale del indice del arreglo\n");
         return -1;
     }
-    return ((indice + 4) % 15 + 1 );
+    if(indice >-1 && indice < 9){
+        return indice + 8;
+    }else{
+        return indice - 8;
+    }
 }
 
 /*indice de la barra priorietaria*/
@@ -167,17 +175,12 @@ int prioriedad_index(struct barra *gt)
     int can=0;
     while (1)
     {
-        if(can>15){
-            for(int y=0;y<15;y++){
-            }
-        }
         /*numero = rand () % (N-M+1) + M;   // Este está entre M y N*/
         int i = (int)(rand() % 16);
         if (gt[i].se_movio == NO_SE_MOVIO || gt[i].posicion == 0)
         {
             return i;
         }
-        can++;
     }
     return -1;
 }
@@ -188,7 +191,7 @@ int k_cerca_de_uno(float k_final)
 void mover(struct barra *gt, float *k_final)
 {
     /*Error del 0.3*/
-    while ((k_final[1] < -1.3 || k_final[1] > 1.3) && k_final[1] != 1)
+    while ((k_final[1] < -0.7 || k_final[1] > 1.3) && k_final[1] != 1)
     {
         int index1 = prioriedad_index(gt);
         int index2 = encontrar_par(index1);
@@ -197,7 +200,6 @@ void mover(struct barra *gt, float *k_final)
         gt[index1].se_movio = ESTA_EN_MOVIMIENTO;
         /*numero = rand () % (N-M+1) + M;   // Este está entre M y N*/
         int indexr = (int)(rand() % 5);
-        printf("indexr: %i\n", indexr);
         int signo ;
         if(k_final[1]<0){
             signo=-1;    
@@ -206,6 +208,8 @@ void mover(struct barra *gt, float *k_final)
         }
         int mover = signo * profundidades[indexr]; //para sacar una profundidad aletatoria que cumpla
         printf("Se va a mover: %i\n", mover);
+        printf("Se va a mover la barra%i\n",index1+1);
+        printf("Se va a mover la barra%i\n",index2+1);
         ban = mover_barra(gt[index1], gt[index2], mover); //Se mueven ambas barras
         if (ban > 0)
         {
@@ -241,9 +245,12 @@ void mover(struct barra *gt, float *k_final)
 
             gt[index2].posicion = mover-gt[index2].posicion;
             gt[index1].posicion = mover-gt[index1].posicion;
+            
+
         }
         sleep(TIME - 1);
         gt[index1].se_movio = NO_SE_MOVIO;
         gt[index2].se_movio = NO_SE_MOVIO;
+        
     }
 }
