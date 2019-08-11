@@ -3,14 +3,23 @@
 
 //[0]valor previo de K
 //[1]valor final de k
-float delta_k[] = {1.0,1.0};
+float delta_k[] = {1.0, 1.0};
 int sockfd;
+struct barra list_barras[15];
 
 //Direccion del servidor
 struct sockaddr_in direccion_servidor;
 
 int initserver(int type, const struct sockaddr *addr, socklen_t alen, int qlen);
 
+//hilo que controla los movimientos de las barras
+void *resultados_piston(void *param)
+{
+	while (1)
+	{
+		mover(list_barras, delta_k);
+	}
+}
 //funcion que verifica el valor de k
 void *actualizar_k()
 {
@@ -36,14 +45,14 @@ void *actualizar_k()
 		{
 			printf("Se recibio: %.5f\n", atof(buf));
 			//printf("La cantidad de caracteres recibidos fueron: %i\n",n);
-			desplazar(delta_k,delta_k[1]+atof(buf));
+			desplazar(delta_k, delta_k[1] + atof(buf));
 			memset(buf, 0, BUFLEN);
 		}
 		if (n < 0)
 		{
 			printf(" recv error");
 			close(clfd);
-		} 
+		}
 	}
 }
 
@@ -74,38 +83,43 @@ errout:
 int main()
 {
 
-	pthread_t tid;		 /* the thread identifier */
-	pthread_t tida[2];   /* the thread identifier */
+	pthread_t tid; /* the thread identifier */
+	pthread_t tid2;
 	pthread_attr_t attr; /* set of attributes for the thread */
-	struct barra list_barras[15];
-	
+	pthread_attr_t attr2;
+
 	pthread_attr_init(&attr);
-	pthread_create(&tid,&attr,actualizar_k,NULL); //este hilo se encarga de actualizar el valor de k
+	pthread_create(&tid, &attr, actualizar_k, NULL); //este hilo se encarga de actualizar el valor de k
 
 	//Inicializar barras
-	iniciar_barras(list_barras);//hay 16 barras se moveran de acuerdo a su indice
+	iniciar_barras(list_barras); //hay 16 barras se moveran de acuerdo a su indice
+	
+	pthread_attr_init(&attr2);
+	pthread_create(&tid2, &attr2, resultados_piston, NULL); //este hilo se encarga de actualizar el valor de k
 
-	while(1){
+	while (1)
+	{
 		// se compara el valor final de k
-		if(delta_k[1]==1){
+		if (delta_k[1] == 1)
+		{
 			printf("Estado crittico del reactor, cada evento de fisión genera exactamente un nuevo evento de fisión\n");
-			imprimir_barras(list_barras,delta_k[1]);
-
-		}else if(delta_k[1]<1){
+			imprimir_barras(list_barras, delta_k[1]);
+		}
+		else if (delta_k[1] < 1)
+		{
 			printf("Estado sub-critico del reactor, es decir la reacción en cadena no se puede sostener\n");
-			imprimir_barras(list_barras,delta_k[1]);
-		}else
+			imprimir_barras(list_barras, delta_k[1]);
+		}
+		else
 		{
 			/* Para valores finales de k mayores a 1*/
 			printf("Estado super-critico del reactor, es decir la reacción en cadena crece exponencialmente\n");
 			/* code */
-			imprimir_barras(list_barras,delta_k[1]);
+			imprimir_barras(list_barras, delta_k[1]);
 		}
-		
-		sleep(3);
-		printf("Me desperte....\n");
-		printf("El valor actual de k es : %.5f\n",delta_k[1]);
-		printf("El valor previo de k fue : %.5f\n",delta_k[0]);
+
+		sleep(TIME);
+		printf("El valor actual de k es : %.4f\n", delta_k[1]);
+		printf("El valor previo de k fue : %.4f\n", delta_k[0]);
 	}
-	
 }
