@@ -17,10 +17,81 @@ void *resultados_piston(void *param)
 {
 	while (1)
 	{
-		mover(list_barras, delta_k);
+		/*Error del 0.5*/
+		while ((delta_k[1] < 0.5 || delta_k[1] > 1.5) && delta_k[1] != 1)
+		{
+			int index1 = prioriedad_index(list_barras);
+			if (index1 >= 0)
+			{
+				int index2 = encontrar_par(index1);
+				int ban;
+				list_barras[index2].se_movio = ESTA_EN_MOVIMIENTO;
+				list_barras[index1].se_movio = ESTA_EN_MOVIMIENTO;
+
+				int indexr = determinar_profundidad(list_barras, delta_k[1]);
+				int signo;
+				if (delta_k[1] < 1)
+				{
+					signo = 1;
+				}
+				else
+				{
+					signo = -1;
+					
+				}
+				int mover = profundidades[indexr]; //para sacar una profundidad adecuada
+				printf("Se va a mover de profundidad: %i\n",mover);
+				printf("Se van a mover las barras: barra%i y barra%i\n",(index1 + 1), (index2 + 1));
+				ban = mover_barra(list_barras[index1], list_barras[index2], mover); //Se mueven ambas barras
+				if (ban > 0)
+				{
+
+					if (mover == 10 || mover == -10)
+					{
+						list_barras[index1].delta_k = signo * 0.1;
+						list_barras[index2].delta_k = signo * 0.1;
+					}
+					else if (mover == 15 || mover == -15)
+					{
+						list_barras[index1].delta_k = signo * 0.3;
+						list_barras[index2].delta_k = signo * 0.3;
+					}
+					else if (mover == 20 || mover == -20)
+					{
+						list_barras[index1].delta_k = signo * 0.4;
+						list_barras[index2].delta_k = signo * 0.4;
+					}
+					else if (mover == 25 || mover == -25)
+					{
+						list_barras[index1].delta_k = signo * 0.5;
+						list_barras[index2].delta_k = signo * 0.5;
+					}
+					else if (mover == 30 || mover == -30)
+					{
+						list_barras[index1].delta_k = signo * 0.55;
+						list_barras[index2].delta_k = signo * 0.55;
+					}
+					desplazar(delta_k, delta_k[1] + list_barras[index1].delta_k + list_barras[index2].delta_k);
+					list_barras[index1].se_movio = SE_MOVIO;
+					list_barras[index2].se_movio = SE_MOVIO;
+
+					list_barras[index2].posicion = mover; //- gt[index2].posicion;
+					list_barras[index1].posicion = mover; //- gt[index1].posicion;
+					list_barras[index1].condicion = ULTIMA_EN_MOVERSE;
+					list_barras[index2].condicion = ULTIMA_EN_MOVERSE;
+					cambiar_movimiento_all_except(list_barras, index1);
+					imprimir_barras(list_barras, delta_k[1]);
+				}
+				list_barras[index1].se_movio = NO_SE_MOVIO;
+				list_barras[index2].se_movio = NO_SE_MOVIO;
+			}
+			sem_post(&sem1);
+			sleep(TIME);
+		}
 	}
 }
-//funcion que verifica el valor de k
+
+//hilo que espera por el valor de k
 void *actualizar_k()
 {
 	memset(&direccion_servidor, 0, sizeof(direccion_servidor)); //ponemos en 0 la estructura direccion_servidor
@@ -43,10 +114,10 @@ void *actualizar_k()
 		char buf[BUFLEN] = {0};
 		while ((n = read(clfd, buf, BUFLEN)) > 0)
 		{
-			printf("Se recibio: %.5f\n", atof(buf));
-			//printf("La cantidad de caracteres recibidos fueron: %i\n",n);
+			printf("Se recibio: %.3f\n", atof(buf));
 			desplazar(delta_k, delta_k[1] + atof(buf));
 			memset(buf, 0, BUFLEN);
+			printf("Se actualizalo el valor de k a : %.3f\n",delta_k[1]);
 		}
 		if (n < 0)
 		{
@@ -82,45 +153,40 @@ errout:
 
 int main()
 {
-	
 
 	pthread_t tid; /* the thread identifier */
 	pthread_t tid2;
 	pthread_attr_t attr; /* set of attributes for the thread */
 	pthread_attr_t attr2;
-
+	sem_init(&sem1, 0, 1); /*incializando el semaforo*/
 	pthread_attr_init(&attr);
 	pthread_create(&tid, &attr, actualizar_k, NULL); //este hilo se encarga de actualizar el valor de k
 
 	//Inicializar barras
 	iniciar_barras(list_barras); //hay 16 barras se moveran de acuerdo a su indice
-	
+
 	pthread_attr_init(&attr2);
 	pthread_create(&tid2, &attr2, resultados_piston, NULL); //este hilo se encarga de actualizar el valor de k
-	
+	imprimir_barras(list_barras, delta_k[1]);
 	while (1)
 	{
+		sem_wait(&sem1);
 		// se compara el valor final de k
 		if (delta_k[1] == 1)
 		{
 			printf("Estado crittico del reactor, cada evento de fisión genera exactamente un nuevo evento de fisión\n");
-			imprimir_barras(list_barras, delta_k[1]);
 		}
 		else if (delta_k[1] < 1)
 		{
 			printf("Estado sub-critico del reactor, es decir la reacción en cadena no se puede sostener\n");
-			imprimir_barras(list_barras, delta_k[1]);
 		}
 		else
 		{
 			/* Para valores finales de k mayores a 1*/
 			printf("Estado super-critico del reactor, es decir la reacción en cadena crece exponencialmente\n");
 			/* code */
-			imprimir_barras(list_barras, delta_k[1]);
 		}
-
-		sleep(TIME);
-		printf("El valor actual de k es : %.4f\n", delta_k[1]);
-		printf("El valor previo de k fue : %.4f\n", delta_k[0]);
+		printf("El valor previo de k fue : %.3f\n", delta_k[0]);
+		printf("\n");
 	}
 }

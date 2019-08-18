@@ -7,6 +7,7 @@
         "socket.h": "c",
         "in.h": "c",
         "inet.h": "c",
-        "resource.h": "c"
+        "resource.h": "c",
+        "pthread.h": "c"
     }
 }
