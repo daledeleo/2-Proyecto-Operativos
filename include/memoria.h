@@ -17,6 +17,8 @@
 #include <ctype.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <math.h>
+#include <time.h>
 
 #define PUERTO 5600 //puerto para el servidor y el cliente
 #define TIME 3      //Representacion del tiempo t(en segundos)
@@ -127,6 +129,15 @@ void cambiar_movimiento_all_except(struct barra *gt, int index)
         }
     }
 }
+
+void cambiar_movimiento_all(struct barra *gt)
+{
+    for (int i = 0; i < 16; i++)
+    {
+        gt[i].se_movio = NO_SE_MOVIO;
+    }
+}
+
 void desplazar(float *k, float valor)
 {
     float temp = k[1];
@@ -150,11 +161,16 @@ void iniciar_barras(struct barra *list)
 
 int mover_barra(struct barra bar, struct barra bar2, int mover)
 {
-    int temp = bar.posicion + mover;
-    if (temp > 30 || temp < 0)
+    int mov = bar.posicion + mover;
+    if (mov >= 30)
     {
-        printf("No se puede hacer dicho movimiento\n");
-        return -1;
+        bar.posicion=30;
+        return 1;
+    }
+    if (mov <= 0)
+    {
+        bar.posicion=0;
+        return 1;
     }
     return 1;
 }
@@ -162,14 +178,18 @@ int mover_barra(struct barra bar, struct barra bar2, int mover)
 /*1 si todas se movieron -1 si no*/
 int todas_se_movieron(struct barra *list)
 {
-    for (int i = 0; i < 16; i++)
+    int ban = 0;
+    int bah = 0;
+    for (int i = 0; i < 15; i++)
     {
-        if (list[i].delta_k == 0)
-        {
-            return -1; //aun no se han movido todas
-        }
+        ban = list[i].se_movio + ban;
+        bah = bah + list[i].posicion;
     }
-    return 1; //ya se movieron todas
+    if (ban == 15 * SE_MOVIO)
+    {
+        return 1; //ya se movieron todas
+    }
+    return -1; //aun no se han movido todas
 }
 //
 void imprimir_barras(struct barra *list, float valor_k)
@@ -209,7 +229,7 @@ int encontrar_perpendicular(int indice)
 
 int determinar_ultimo_movimiento(struct barra *gt)
 {
-    for (int i = 0; i < 16; i++)
+    for (int i = 0; i < 9; i++)
     {
         if (gt[i].condicion == ULTIMA_EN_MOVERSE)
         {
@@ -219,17 +239,22 @@ int determinar_ultimo_movimiento(struct barra *gt)
     }
     return -1; //no hubo ultimo movimiento
 }
-/*0 si delta_k=0 1 si delta_k=0.1 1 si delta_k=0.1 1 si delta_k=0.1 1 si delta_k=0.1 1 si delta_k=0.1 */
-int 
+
+int quitar_barras(struct barra *gt,int eval){
+    for(int i=0;i<16;i++){
+        
+    }
+    return -1;
+}
 
 /*indice de la barra priorietaria*/
-int prioriedad_index(struct barra *gt)
+int prioriedad_index(struct barra *gt, float delta_k)
 {
 
     if (es_el_comienzo(gt) > 0)
     {
         /*numero = rand () % (N-M+1) + M;   // Este está entre M y N*/
-        return (int)(rand() % 16);
+        return (int)(rand() % 9);
     }
     else
     {
@@ -239,127 +264,54 @@ int prioriedad_index(struct barra *gt)
             barras que se encuentran en movimiento.*/
         if (ind >= 0)
         {
-            int i = encontrar_perpendicular(ind);
-            if (todas_se_movieron(gt) < 0)
+            if (todas_se_movieron(gt) > 0)
             {
-                while (gt[i].delta_k != 0)
-                {
-                    ind = (int)(rand() % 16);
-                    i = encontrar_perpendicular(ind);
-                }
-                return i;
-            }else if(){
-
+                cambiar_movimiento_all(gt);
             }
+            int i = encontrar_perpendicular(ind);
+            while (gt[i].se_movio != NO_SE_MOVIO)
+            {
+                ind = (int)(rand() % 9);
+                i = encontrar_perpendicular(ind);
+            }
+            return i;
         }
-        //return (int)(rand() % 16);
     }
     printf("Error al sacar la prioriedad en las barras\n");
     return -1;
 }
-
+/*  0 si faltan de moverse 10m de profundidad
+    1 si faltan de moverse 15m de profundidad
+    2 si faltan de moverse 20m de profundidad
+    3 si faltan de moverse 25m de profundidad
+    4 si faltan de moverse 30m de profundidad
+*/
 int determinar_profundidad(struct barra *gt, float k)
 {
+    int var = 0;
     for (int i = 0; i < 15; i++)
     {
-        if (gt[i].posicion < 10)
-        {
-            return 0;
-        }
+        var = gt[i].posicion + var;
     }
-    for (int i = 0; i < 15; i++)
+    if (var < 15 * profundidades[0])
     {
-        if (gt[i].posicion < 15)
-        {
-            return 1;
-        }
+        return 0;
     }
-    for (int i = 0; i < 15; i++)
+    else if (var >= 15 * profundidades[0] && var < 15 * profundidades[1])
     {
-        if (gt[i].posicion < 20)
-        {
-            return 2;
-        }
+        return 1;
     }
-    for (int i = 0; i < 15; i++)
+    else if (var >= 15 * profundidades[1] && var < 15 * profundidades[2])
     {
-        if (gt[i].posicion < 25)
-        {
-            return 3;
-        }
+        return 2;
     }
-    return 4;
+    else if (var >= 15 * profundidades[2] && var < 15 * profundidades[3])
+        return 3;
+
+    else if (var >= 15 * profundidades[3])
+    {
+        return 4;
+    }
+    printf("Error en el determinar la profundidad\n");
+    return -1;
 }
-/*
-void mover(struct barra *gt, float *k_final)
-{
-    while ((k_final[1] < 0.5 || k_final[1] > 1.5) && k_final[1] != 1)
-    {
-        int index1 = prioriedad_index(gt);
-        if (index1 >= 0)
-        {
-            int index2 = encontrar_par(index1);
-            int ban;
-            gt[index2].se_movio = ESTA_EN_MOVIMIENTO;
-            gt[index1].se_movio = ESTA_EN_MOVIMIENTO;
-
-            int indexr = determinar_profundidad(gt, k_final[1]);
-            int signo;
-            if (k_final[1] < 1)
-            {
-                signo = 1;
-            }
-            else
-            {
-                signo = -1;
-            }
-            int mover = profundidades[indexr]; //para sacar una profundidad aletatoria que cumpla
-            printf("Se va a mover: %i\n", mover);
-            printf("Se va a mover la barra%i\n", index1 + 1);
-            printf("Se va a mover la barra%i\n", index2 + 1);
-            ban = mover_barra(gt[index1], gt[index2], mover); //Se mueven ambas barras
-            if (ban > 0)
-            {
-
-                if (mover == 10 || mover == -10)
-                {
-                    gt[index1].delta_k = signo * 0.1;
-                    gt[index2].delta_k = signo * 0.1;
-                }
-                else if (mover == 15 || mover == -15)
-                {
-                    gt[index1].delta_k = signo * 0.3;
-                    gt[index2].delta_k = signo * 0.3;
-                }
-                else if (mover == 20 || mover == -20)
-                {
-                    gt[index1].delta_k = signo * 0.4;
-                    gt[index2].delta_k = signo * 0.4;
-                }
-                else if (mover == 25 || mover == -25)
-                {
-                    gt[index1].delta_k = signo * 0.5;
-                    gt[index2].delta_k = signo * 0.5;
-                }
-                else if (mover == 30 || mover == -30)
-                {
-                    gt[index1].delta_k = signo * 0.55;
-                    gt[index2].delta_k = signo * 0.55;
-                }
-                desplazar(k_final, k_final[1] + gt[index1].delta_k + gt[index2].delta_k);
-                gt[index1].se_movio = SE_MOVIO;
-                gt[index2].se_movio = SE_MOVIO;
-
-                gt[index2].posicion = mover; //- gt[index2].posicion;
-                gt[index1].posicion = mover; //- gt[index1].posicion;
-                gt[index1].condicion = ULTIMA_EN_MOVERSE;
-                gt[index2].condicion = ULTIMA_EN_MOVERSE;
-                cambiar_movimiento_all_except(gt, index1);
-            }
-            sleep(TIME - 1);
-            gt[index1].se_movio = NO_SE_MOVIO;
-            gt[index2].se_movio = NO_SE_MOVIO;
-        }
-    }
-}
-*/

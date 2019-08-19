@@ -1,6 +1,9 @@
 #include "memoria.h"
 #define MAXSLEEP 64
 
+void *alerta_az5(void *param){
+	
+}
 int connect_retry(int domain, int type, int protocol, const struct sockaddr *addr, socklen_t alen)
 {
 	int numsec, fd; /* * Try to connect with exponential backoff. */
@@ -24,7 +27,7 @@ int connect_retry(int domain, int type, int protocol, const struct sockaddr *add
 int main()
 {
 	int sockfd;
-	
+	pthread_t tid; /* the thread identifier */
 
 	//Direccion del servidor
 	struct sockaddr_in direccion_cliente;

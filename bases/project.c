@@ -7,86 +7,133 @@ float delta_k[] = {1.0, 1.0};
 int sockfd;
 struct barra list_barras[15];
 
+clock_t t_ini;
+double secs;
+char *Az5 = "";
+int clfd;
 //Direccion del servidor
 struct sockaddr_in direccion_servidor;
 
 int initserver(int type, const struct sockaddr *addr, socklen_t alen, int qlen);
 
+void *mandar_aviso(void *param)
+{
+	while (1)
+	{
+		secs = (double)(t_ini / CLOCKS_PER_SEC);
+		printf("%.16g milisegundos\n", secs * 1000.0);
+		if ((int)secs == (TIME * 3))
+		{
+			char *a="Az5";
+			int n=write(sockfd,a,strlen(a));
+			int n = 0;
+			char buf[BUFLEN] = {0};
+			while ((n = read(clfd, buf, BUFLEN)) > 0)
+			{
+				printf("Se recibio: %.3f\n", atof(buf));
+				desplazar(delta_k, delta_k[1] + atof(buf));
+				memset(buf, 0, BUFLEN);
+				printf("Se actualizalo el valor de k a : %.3f\n", delta_k[1]);
+			}
+			if (n < 0)
+			{
+				printf(" recv error");
+				close(clfd);
+			}
+			
+		}
+	}
+}
 //hilo que controla los movimientos de las barras
 void *resultados_piston(void *param)
 {
+	return 0;
 	while (1)
 	{
 		/*Error del 0.5*/
 		while ((delta_k[1] < 0.5 || delta_k[1] > 1.5) && delta_k[1] != 1)
 		{
-			int index1 = prioriedad_index(list_barras);
+			int index1 = prioriedad_index(list_barras, delta_k[1]);
+			int index2 = encontrar_par(index1);
 			if (index1 >= 0)
 			{
-				int index2 = encontrar_par(index1);
 				int ban;
-				list_barras[index2].se_movio = ESTA_EN_MOVIMIENTO;
-				list_barras[index1].se_movio = ESTA_EN_MOVIMIENTO;
-
 				int indexr = determinar_profundidad(list_barras, delta_k[1]);
 				int signo;
-				if (delta_k[1] < 1)
+				if (delta_k[1] < 0.5)
 				{
 					signo = 1;
 				}
 				else
 				{
 					signo = -1;
-					
 				}
-				int mover = profundidades[indexr]; //para sacar una profundidad adecuada
-				printf("Se va a mover de profundidad: %i\n",mover);
-				printf("Se van a mover las barras: barra%i y barra%i\n",(index1 + 1), (index2 + 1));
+
+				int mover = -1 * signo * profundidades[indexr]; //para sacar una profundidad adecuada
+				printf("Se va a mover de profundidad: %i\n", mover);
+				printf("Se van a mover las barras: barra%i y barra%i\n", (index1 + 1), (index2 + 1));
 				ban = mover_barra(list_barras[index1], list_barras[index2], mover); //Se mueven ambas barras
 				if (ban > 0)
 				{
 
 					if (mover == 10 || mover == -10)
 					{
-						list_barras[index1].delta_k = signo * 0.1;
-						list_barras[index2].delta_k = signo * 0.1;
+						list_barras[index1].delta_k = signo * 0.1 + list_barras[index1].delta_k;
+						list_barras[index2].delta_k = signo * 0.1 + list_barras[index2].delta_k;
 					}
 					else if (mover == 15 || mover == -15)
 					{
-						list_barras[index1].delta_k = signo * 0.3;
-						list_barras[index2].delta_k = signo * 0.3;
+						list_barras[index1].delta_k = signo * 0.3 + list_barras[index1].delta_k;
+						list_barras[index2].delta_k = signo * 0.3 + list_barras[index2].delta_k;
 					}
 					else if (mover == 20 || mover == -20)
 					{
-						list_barras[index1].delta_k = signo * 0.4;
-						list_barras[index2].delta_k = signo * 0.4;
+						list_barras[index1].delta_k = signo * 0.4 + list_barras[index1].delta_k;
+						list_barras[index2].delta_k = signo * 0.4 + list_barras[index2].delta_k;
 					}
 					else if (mover == 25 || mover == -25)
 					{
-						list_barras[index1].delta_k = signo * 0.5;
-						list_barras[index2].delta_k = signo * 0.5;
+						list_barras[index1].delta_k = signo * 0.5 + list_barras[index1].delta_k;
+						list_barras[index2].delta_k = signo * 0.5 + list_barras[index2].delta_k;
 					}
 					else if (mover == 30 || mover == -30)
 					{
-						list_barras[index1].delta_k = signo * 0.55;
-						list_barras[index2].delta_k = signo * 0.55;
+						list_barras[index1].delta_k = signo * 0.55 + list_barras[index1].delta_k;
+						list_barras[index2].delta_k = signo * 0.55 + list_barras[index2].delta_k;
 					}
 					desplazar(delta_k, delta_k[1] + list_barras[index1].delta_k + list_barras[index2].delta_k);
-					list_barras[index1].se_movio = SE_MOVIO;
-					list_barras[index2].se_movio = SE_MOVIO;
 
-					list_barras[index2].posicion = mover; //- gt[index2].posicion;
-					list_barras[index1].posicion = mover; //- gt[index1].posicion;
+					list_barras[index2].posicion = mover; // + list_barras[index2].posicion;
+					list_barras[index1].posicion = mover; //+ list_barras[index1].posicion;
+
+					if (list_barras[index1].posicion >= 30)
+					{
+						list_barras[index1].posicion = 30;
+						list_barras[index2].posicion = 30;
+					}
+					if (list_barras[index1].posicion <= 0)
+					{
+						list_barras[index1].posicion = 0;
+						list_barras[index2].delta_k = 0.0;
+						list_barras[index2].posicion = 0;
+						list_barras[index1].delta_k = 0.0;
+					}
 					list_barras[index1].condicion = ULTIMA_EN_MOVERSE;
 					list_barras[index2].condicion = ULTIMA_EN_MOVERSE;
 					cambiar_movimiento_all_except(list_barras, index1);
+
 					imprimir_barras(list_barras, delta_k[1]);
+					list_barras[index1].se_movio = SE_MOVIO;
+					list_barras[index2].se_movio = SE_MOVIO;
 				}
+			}
+			else
+			{
 				list_barras[index1].se_movio = NO_SE_MOVIO;
 				list_barras[index2].se_movio = NO_SE_MOVIO;
 			}
 			sem_post(&sem1);
-			sleep(TIME);
+			sleep(TIME - 2);
 		}
 	}
 }
@@ -107,9 +154,10 @@ void *actualizar_k()
 	{ //Hasta 1000 solicitudes en cola
 		printf("Error al inicializar el servidor\n");
 	}
-	int clfd = accept(sockfd, NULL, NULL);
+	clfd = accept(sockfd, NULL, NULL);
 	while (1)
 	{
+
 		int n = 0;
 		char buf[BUFLEN] = {0};
 		while ((n = read(clfd, buf, BUFLEN)) > 0)
@@ -117,7 +165,7 @@ void *actualizar_k()
 			printf("Se recibio: %.3f\n", atof(buf));
 			desplazar(delta_k, delta_k[1] + atof(buf));
 			memset(buf, 0, BUFLEN);
-			printf("Se actualizalo el valor de k a : %.3f\n",delta_k[1]);
+			printf("Se actualizalo el valor de k a : %.3f\n", delta_k[1]);
 		}
 		if (n < 0)
 		{
@@ -175,16 +223,19 @@ int main()
 		if (delta_k[1] == 1)
 		{
 			printf("Estado crittico del reactor, cada evento de fisión genera exactamente un nuevo evento de fisión\n");
+			t_ini = 0;
 		}
 		else if (delta_k[1] < 1)
 		{
 			printf("Estado sub-critico del reactor, es decir la reacción en cadena no se puede sostener\n");
+			t_ini = 0;
 		}
 		else
 		{
 			/* Para valores finales de k mayores a 1*/
 			printf("Estado super-critico del reactor, es decir la reacción en cadena crece exponencialmente\n");
 			/* code */
+			t_ini = clock();
 		}
 		printf("El valor previo de k fue : %.3f\n", delta_k[0]);
 		printf("\n");
