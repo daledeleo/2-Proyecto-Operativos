@@ -42,7 +42,6 @@ int main()
 		printf("falló conexión\n");
 		exit(-1);
 	}
-	printf("soccccc: %i\n",sockfd);
 	//En este punto ya tenemos una conexión válida
 	char *buf=(char *)malloc(sizeof(char));
 	while (1)

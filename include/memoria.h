@@ -68,7 +68,7 @@ void reemplazar(char *linea)
 }
 
 int Az5_active(struct barra *gt,float k){
-    for(int i=0;i<15;i++){
+    for(int i=0;i<16;i++){
         gt[i].posicion=30;
         gt[i].delta_k=-1.85;
     }
@@ -77,7 +77,7 @@ int Az5_active(struct barra *gt,float k){
 
 int es_el_comienzo(struct barra *gt)
 {
-    for (int i = 0; i < 15; i++)
+    for (int i = 0; i < 16; i++)
     {
         if (gt[i].delta_k != 0)
         {
@@ -214,6 +214,7 @@ void imprimir_barras(struct barra *list, float valor_k)
            list[2].posicion, list[3].posicion, list[4].posicion, list[5].posicion, list[6].posicion, list[7].posicion);
     printf("delta k:\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", list[0].delta_k, list[1].delta_k,
            list[2].delta_k, list[3].delta_k, list[4].delta_k, list[5].delta_k, list[6].delta_k, list[7].delta_k);
+printf("\n");
     printf("\t\tbarra9\tbarra10\tbarra11\tbarra12\tbarra13\tbarra14\tbarra15\tbarra16\n");
     printf("posicion:\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n", list[8].posicion, list[9].posicion,
            list[10].posicion, list[11].posicion, list[12].posicion, list[13].posicion, list[14].posicion, list[15].posicion);

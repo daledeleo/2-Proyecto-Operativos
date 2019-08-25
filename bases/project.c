@@ -211,7 +211,7 @@ void *resultados_piston(void *param)
 				sleep(1);
 			}
 		}
-		secs = 0;
+		//secs = 0;
 	}
 }
 
