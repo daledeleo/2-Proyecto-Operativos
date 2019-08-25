@@ -47,7 +47,7 @@ int main()
 	char *buf=(char *)malloc(sizeof(char));
 	while (1)
 	{
-		printf("ingrese un numero(exit para apagar): ");
+		printf("ingrese un numero(exit para apagar) para modficar el valor de k: ");
 		fgets(buf,100, stdin);
 		reemplazar(buf); //quitamos el salto de linea
 		if(strcmp(buf,"exit")==0){
@@ -68,5 +68,6 @@ int main()
 			close(sockfd);
 		}
 	}
+	close(sockfd);
 	return 0;
 }

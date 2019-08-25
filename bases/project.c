@@ -9,7 +9,7 @@ int sockfd_az5;
 struct barra list_barras[15];
 
 clock_t t_ini;
-char *Az5 = "";
+char Az5[40] ={0};
 int clfd;
 int clfd_az5;
 int secs = 0; //encargado de tener el tiempo final en el estado supercritico
@@ -30,55 +30,79 @@ void *cronometro(void *param)
 			/*si entra aqui, esta en estado super-critico*/
 			sleep(1);
 			secs++;
+			sem_post(&sem2);
 		}
 	}
 }
 //hilo que solo hace la funcion del Az5
 void *mandar_aviso(void *param)
 {
-	memset(&direccion_servidor_az5, 0, sizeof(direccion_servidor_az5)); //ponemos en 0 la estructura direccion_servidor
+	int server_fd, new_socket;
+	struct sockaddr_in address;
+	int opt = 1;
+	int addrlen = sizeof(address);
 
-	//llenamos los campos
-	direccion_servidor_az5.sin_family = AF_INET;					 //IPv4
-	direccion_servidor_az5.sin_port = htons(PUERTO_AZ5);			 //Convertimos el numero de puerto al endianness de la red
-	direccion_servidor_az5.sin_addr.s_addr = inet_addr("127.0.0.1"); //Nos vinculamos a la interface localhost o podemos usar INADDR_ANY para ligarnos A TODAS las interfaces
+	// Creating socket file descriptor
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+	{
+		perror("socket failed");
+		exit(EXIT_FAILURE);
+	}
 
-	//inicalizamos servidor (AF_INET + SOCK_STREAM = TCP)
-	if ((sockfd_az5 = initserver(SOCK_STREAM, (struct sockaddr *)&direccion_servidor_az5,
-								 sizeof(direccion_servidor_az5), 100)) < 0)
-	{ //Hasta 1000 solicitudes en cola
-		printf("Error al inicializar el servidor\n");
+	// Forcefully attaching socket to the port 8080
+	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+				   &opt, sizeof(opt)))
+	{
+		perror("setsockopt");
+		exit(EXIT_FAILURE);
 	}
-	
-	clfd_az5 = accept(sockfd_az5, NULL,NULL);
-	printf("socket 1 %i\n",clfd_az5);
-	if(clfd_az5<0){
-		perror("Error en clsd_az5");
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(PUERTO_AZ5);
+
+	// Forcefully attaching socket to the port 8080
+	if (bind(server_fd, (struct sockaddr *)&address,
+			 sizeof(address)) < 0)
+	{
+		perror("bind failed");
+		exit(EXIT_FAILURE);
 	}
+	if (listen(server_fd, 3) < 0)
+	{
+		perror("listen");
+		exit(EXIT_FAILURE);
+	}
+	if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
+							 (socklen_t *)&addrlen)) < 0)
+	{
+		perror("accept");
+		exit(EXIT_FAILURE);
+	}
+	printf("Se habilto el ingresos del boton AZ5 en otro terminar por el socket: %i\n", new_socket);
 	while (1)
 	{
-		if (secs >= (TIME*3))
+		if (secs >= (TIME * 3))
 		{
-			char *a = "Az5";
+			sem_wait(&sem2);
+			char *p = "AZ5";
 			int n = 0;
-			n = write(clfd_az5, a, 3);
-			if(n<0){
-				perror("Error al enviar az5\n");
-			}
-			char buf[BUFLEN] = {0};
-			int n1=	0;
-			while ((n1 = read(clfd_az5, buf, BUFLEN)) > 0)
+			n = send(new_socket, p, strlen(p), 0);
+			if (n < 0)
 			{
-				printf("Se recibio: %s\n", buf);
-				Az5 = buf;
+				perror("Error en send az5:");
 			}
-			if (n< 0)
+			n = read(new_socket, Az5, 50);
+			if (n < 0)
 			{
-				printf(" recv error");
-				close(clfd_az5);
+				perror("Error en read az5:");
 			}
+			printf("se recibio %s(AZ5)\n",Az5);
+			secs=0;
+			sleep(TIME*6);
 		}
 	}
+	close(new_socket);
+	return 0;
 }
 //hilo que controla los movimientos de las barras
 void *resultados_piston(void *param)
@@ -90,8 +114,17 @@ void *resultados_piston(void *param)
 		{
 			if (strcmp(Az5, "activar") == 0)
 			{
-				Az5_active(list_barras,delta_k[1]);
+				Az5_active(list_barras, delta_k[1]);
 				imprimir_barras(list_barras, delta_k[1]);
+				sem_post(&sem1);
+				printf("Espere mientras las el reactor se estabiliza a la normalidad..........\n");
+				sleep(TIME*5);
+				iniciar_barras(list_barras);
+				delta_k[1]=1;
+				delta_k[0]=1;
+				imprimir_barras(list_barras, delta_k[1]);
+				sem_post(&sem1);
+				memset(Az5,0,strlen(Az5));
 			}
 			else
 			{
@@ -178,7 +211,7 @@ void *resultados_piston(void *param)
 				sleep(1);
 			}
 		}
-		secs=0;
+		secs = 0;
 	}
 }
 
@@ -194,19 +227,20 @@ void *actualizar_k()
 
 	//inicalizamos servidor (AF_INET + SOCK_STREAM = TCP)
 	if ((sockfd = initserver(SOCK_STREAM, (struct sockaddr *)&direccion_servidor,
-							 sizeof(direccion_servidor), 1000)) < 0)
+							 sizeof(direccion_servidor), 10)) < 0)
 	{ //Hasta 1000 solicitudes en cola
 		printf("Error al inicializar el servidor\n");
 	}
 	clfd = accept(sockfd, NULL, NULL);
-	printf("socket 2 %i\n",clfd);
+	printf("Se habilto las modificaciones de k en otro terminar por el socket: %i\n", clfd);
 	while (1)
 	{
 		int n = 0;
 		char buf[BUFLEN] = {0};
 		while ((n = read(clfd, buf, BUFLEN)) > 0)
 		{
-			if(strcmp(buf,"exit")==0){
+			if (strcmp(buf, "exit") == 0)
+			{
 				exit(1);
 			}
 			printf("Se recibio: %.3f\n", atof(buf));
@@ -283,12 +317,12 @@ int main()
 		if (delta_k[1] == 1)
 		{
 			printf("Estado crittico del reactor, cada evento de fisión genera exactamente un nuevo evento de fisión\n");
-			secs=0;
+			secs = 0;
 		}
 		else if (delta_k[1] < 1)
 		{
 			printf("Estado sub-critico del reactor, es decir la reacción en cadena no se puede sostener\n");
-			secs=0;
+			secs = 0;
 		}
 		else
 		{

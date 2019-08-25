@@ -70,13 +70,11 @@ void reemplazar(char *linea)
 int Az5_active(struct barra *gt,float k){
     for(int i=0;i<15;i++){
         gt[i].posicion=30;
-        k=k-gt[i].delta_k;
-        if(k<=0){
-            k=0;
-        }
+        gt[i].delta_k=-1.85;
     }
     return 1;
 }
+
 int es_el_comienzo(struct barra *gt)
 {
     for (int i = 0; i < 15; i++)
