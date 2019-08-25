@@ -21,13 +21,15 @@
 #include <time.h>
 
 #define PUERTO 5600 //puerto para el servidor y el cliente
-#define TIME 3      //Representacion del tiempo t(en segundos)
+#define PUERTO_AZ5 6000 //puerto para mandar la señal AZ5
+#define TIME 2      //Representacion del tiempo t(en segundos)
 #define SE_MOVIO 2
 #define NO_SE_MOVIO 0
 #define ESTA_EN_MOVIMIENTO 1
 #define ULTIMA_EN_MOVERSE 1
 
 sem_t sem1; //para controlar las tablas por pantalla
+sem_t sem2; //para el cronometro
 
 /*funciones para los hilos*/
 void *actualizar_k();
@@ -65,6 +67,16 @@ void reemplazar(char *linea)
     }
 }
 
+int Az5_active(struct barra *gt,float k){
+    for(int i=0;i<15;i++){
+        gt[i].posicion=30;
+        k=k-gt[i].delta_k;
+        if(k<=0){
+            k=0;
+        }
+    }
+    return 1;
+}
 int es_el_comienzo(struct barra *gt)
 {
     for (int i = 0; i < 15; i++)
@@ -154,7 +166,7 @@ void iniciar_barras(struct barra *list)
         gt.condicion = NO_SE_MOVIO;
         gt.longitud_max = 30;
         gt.se_movio = NO_SE_MOVIO;
-        gt.delta_k = 0;
+        gt.delta_k = 0.0;
         list[i] = gt;
     }
 }
@@ -194,6 +206,9 @@ int todas_se_movieron(struct barra *list)
 //
 void imprimir_barras(struct barra *list, float valor_k)
 {
+    if(es_el_comienzo(list)>0){
+        list[15].posicion=0;
+    }
     printf("*****************************************************************************************\n");
     printf("**El valor de k es: %.3f**\n", valor_k);
     printf("\t\tbarra1\tbarra2\tbarra3\tbarra4\tbarra5\tbarra6\tbarra7\tbarra8\n");

@@ -1,9 +1,6 @@
 #include "memoria.h"
 #define MAXSLEEP 64
 
-void *alerta_az5(void *param){
-	
-}
 int connect_retry(int domain, int type, int protocol, const struct sockaddr *addr, socklen_t alen)
 {
 	int numsec, fd; /* * Try to connect with exponential backoff. */
@@ -27,7 +24,6 @@ int connect_retry(int domain, int type, int protocol, const struct sockaddr *add
 int main()
 {
 	int sockfd;
-	pthread_t tid; /* the thread identifier */
 
 	//Direccion del servidor
 	struct sockaddr_in direccion_cliente;
@@ -40,18 +36,24 @@ int main()
 	direccion_cliente.sin_addr.s_addr = inet_addr("127.0.0.1"); //Nos tratamos de conectar a esta direccion
 	//AF_INET + SOCK_STREAM = TCP
 
-	if ((sockfd = connect_retry(direccion_cliente.sin_family, SOCK_STREAM, 0, (struct sockaddr *)&direccion_cliente, sizeof(direccion_cliente))) < 0)
+	if ((sockfd = connect_retry(direccion_cliente.sin_family, SOCK_STREAM, 0, 
+	(struct sockaddr *)&direccion_cliente, sizeof(direccion_cliente))) < 0)
 	{
 		printf("falló conexión\n");
 		exit(-1);
 	}
+	printf("soccccc: %i\n",sockfd);
 	//En este punto ya tenemos una conexión válida
 	char *buf=(char *)malloc(sizeof(char));
 	while (1)
 	{
-		printf("ingrese un numero: ");
+		printf("ingrese un numero(exit para apagar): ");
 		fgets(buf,100, stdin);
 		reemplazar(buf); //quitamos el salto de linea
+		if(strcmp(buf,"exit")==0){
+			write(sockfd,buf,strlen(buf));
+			exit(1);
+		}
 		while(validar_num(buf) < 0 ){
 			fflush(stdout);
 			printf("ingrese un numero valido: ");
@@ -65,7 +67,6 @@ int main()
 			perror("Error en el envio");
 			close(sockfd);
 		}
-		fflush(stdout);
 	}
 	return 0;
 }

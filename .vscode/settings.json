@@ -8,6 +8,7 @@
         "in.h": "c",
         "inet.h": "c",
         "resource.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "time.h": "c"
     }
 }
